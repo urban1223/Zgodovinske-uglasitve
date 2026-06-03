@@ -52,8 +52,7 @@
             width: 100%; 
             max-width: 550px; 
             text-align: center; 
-            border: 1px solid #2a344a; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3); 
+            border: 1px solid #2a2a35; 
             box-sizing: border-box;
         }
 
@@ -68,7 +67,7 @@
             z-index: 10; box-shadow: 0 0 15px var(--amber);
             transition: transform 0.15s cubic-bezier(0.1, 0.5, 0.1, 1); 
         }
-        .marker { position: absolute; width: 2px; height: 15px; background: #3d4a66; left: 50%; bottom: 20px; transform-origin: bottom center; }
+        .marker { position: absolute; width: 2px; height: 15px; background: #445; left: 50%; bottom: 20px; transform-origin: bottom center; }
         .marker.zero { background: var(--green); height: 25px; width: 3px; box-shadow: 0 0 10px var(--green); }
         .marker-label { position: absolute; font-size: 11px; color: #556; width: 40px; text-align: center; left: 50%; bottom: 20px; transform-origin: bottom center; font-family: monospace; }
 
@@ -83,15 +82,21 @@
         input, select { background: #141b29; border: 1px solid #445; color: var(--amber); padding: 8px; border-radius: 5px; text-align: center; width: 100%; font-size: 14px; outline: none; font-weight: bold; box-sizing: border-box; }
         
         .mic-btn { width: 100%; padding: 18px; border-radius: 15px; border: 2px solid var(--amber); background: transparent; color: var(--amber); cursor: pointer; font-weight: bold; margin-bottom: 20px; font-size: 16px; transition: 0.2s; }
-        .mic-btn.active { background: var(--amber); color: #141b29; }
+        
+        /* POPRAVLJEN DEL: Gumb ostane nepobarvan (prosojen), zelene barve so le napis in rob */
+        .mic-btn.active { 
+            background: transparent; 
+            color: var(--amber); 
+            border-color: var(--amber); 
+        }
 
         .synth-controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 15px 0; }
         .octave-btn { background: #334; border: none; color: white; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 18px; }
         #octave-label { font-weight: bold; min-width: 110px; font-size: 18px; color: var(--amber); text-align: center; }
 
         .keyboard { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 10px; }
-        .key { background: rgba(255,255,255,0.03); border: 1px solid rgba(242,204,90,0.15); padding: 20px 0; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; color: rgba(232,224,208,0.5); transition: 0.1s; }
-        .key.playing { background: var(--amber); color: #141b29; border-color: var(--amber); box-shadow: 0 0 15px var(--amber); }
+        .key { background: #141b29; border: 1px solid #334; padding: 20px 0; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; color: #aaa; transition: 0.1s; }
+        .key.playing { background: var(--amber); color: #000; border-color: var(--amber); box-shadow: 0 0 15px var(--amber); }
 
         @media (max-width: 500px) {
             .panel { padding: 20px 15px; }

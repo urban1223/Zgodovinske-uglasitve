@@ -1,7 +1,7 @@
 {
-  "name": "Historical tuning Nova akademija",
-  "short_name": "NATuner",
-  "description": "Historical tunings Nova Akademija",
+  "name": "Zgodovinske uglasitve Nova akademija",
+  "short_name": "Zgodovinski uglaševalec",
+  "description": "Zgodovisnke uglasitve Nova Akademija",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#141b29",
