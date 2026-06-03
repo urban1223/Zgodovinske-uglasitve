@@ -100,24 +100,24 @@
 
     <div class="enharmonic-selector">
         <div class="toggle-group">
-            <button class="enh-btn active" id="e1u" onclick="setEnh(1,'Cis',1.0417,'e1u','e1d')">Cis</button>
-            <button class="enh-btn" id="e1d" onclick="setEnh(1,'Des',1.0667,'e1d','e1u')">Des</button>
+            <button class="enh-btn active" id="e1u" onclick="setEnh(1,'C♯',1.0417,'e1u','e1d')">C♯</button>
+            <button class="enh-btn" id="e1d" onclick="setEnh(1,'D♭',1.0667,'e1d','e1u')">D♭</button>
         </div>
         <div class="toggle-group">
-            <button class="enh-btn" id="e3u" onclick="setEnh(3,'Eb',1.2,'e3u','e3d')">Eb</button>
-            <button class="enh-btn active" id="e3d" onclick="setEnh(3,'Dis',1.1719,'e3d','e3u')">Dis</button>
+            <button class="enh-btn" id="e3u" onclick="setEnh(3,'E♭',1.2,'e3u','e3d')">E♭</button>
+            <button class="enh-btn active" id="e3d" onclick="setEnh(3,'D♯',1.1719,'e3d','e3u')">D♯</button>
         </div>
         <div class="toggle-group">
-            <button class="enh-btn active" id="e6u" onclick="setEnh(6,'Fis',1.3887,'e6u','e6d')">Fis</button>
-            <button class="enh-btn" id="e6d" onclick="setEnh(6,'Ges',1.4063,'e6d','e6u')">Ges</button>
+            <button class="enh-btn active" id="e6u" onclick="setEnh(6,'F♯',1.3887,'e6u','e6d')">F♯</button>
+            <button class="enh-btn" id="e6d" onclick="setEnh(6,'G♭',1.4063,'e6d','e6u')">G♭</button>
         </div>
         <div class="toggle-group">
-            <button class="enh-btn active" id="e8u" onclick="setEnh(8,'Gis',1.6,'e8u','e8d')">Gis</button>
-            <button class="enh-btn" id="e8d" onclick="setEnh(8,'As',1.5625,'e8d','e8u')">As</button>
+            <button class="enh-btn active" id="e8u" onclick="setEnh(8,'G♯',1.6,'e8u','e8d')">G♯</button>
+            <button class="enh-btn" id="e8d" onclick="setEnh(8,'A♭',1.5625,'e8d','e8u')">A♭</button>
         </div>
         <div class="toggle-group">
-            <button class="enh-btn active" id="e10u" onclick="setEnh(10,'B',1.7778,'e10u','e10d')">B</button>
-            <button class="enh-btn" id="e10d" onclick="setEnh(10,'Ais',1.7361,'e10d','e10u')">Ais</button>
+            <button class="enh-btn active" id="e10u" onclick="setEnh(10,'B♭',1.7778,'e10u','e10d')">B♭</button>
+            <button class="enh-btn" id="e10d" onclick="setEnh(10,'A♯',1.7361,'e10d','e10u')">A♯</button>
         </div>
     </div>
 
@@ -135,7 +135,7 @@ let audioCtx, analyser, micStream;
 let baseC = 415 / 1.6667; 
 let currentOctave = 3;
 let currentNeedleAngle = 0;
-let noteNames = ["C", "Cis", "D", "Dis", "E", "F", "Fis", "G", "Gis", "A", "B", "H"];
+let noteNames = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "B♭", "B"];
 let ratios = [1, 1.0417, 1.1111, 1.1719, 1.25, 1.3333, 1.3887, 1.5, 1.6, 1.6667, 1.7778, 1.875];
 let activeOscs = {};
 

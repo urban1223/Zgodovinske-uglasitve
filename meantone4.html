@@ -14,7 +14,7 @@
 
         .gauge-container { 
             position: relative; width: 100%; height: 220px; margin-top: 10px; 
-            background: #0b111a; border-radius: 20px; border: 1px solid #2a344a; overflow: hidden;
+            background: var(--bg); border-radius: 20px; border: 1px solid #334; overflow: hidden;
         }
         .needle { 
             width: 3px; height: 160px; background: var(--amber); 
@@ -32,7 +32,7 @@
         .cents-val { font-size: 20px; font-weight: bold; font-family: monospace; color: var(--amber); }
         .hz-display { font-size: 14px; color: #556; font-family: monospace; align-self: center; }
 
-        .settings-bar { display: grid; grid-template-columns: 1fr 1fr; background: #0b111a; padding: 15px; border-radius: 15px; margin: 15px 0; gap: 20px; border: 1px solid #2a344a; align-items: end; }
+        .settings-bar { display: grid; grid-template-columns: 1fr 1fr; background: var(--bg); padding: 15px; border-radius: 15px; margin: 15px 0; gap: 20px; border: 1px solid #2a2a35; align-items: end; }
         .setting-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
         label { font-size: 9px; color: #889; text-transform: uppercase; letter-spacing: 1px; }
         input, select { background: #141b29; border: 1px solid #445; color: var(--amber); padding: 8px; border-radius: 5px; text-align: center; width: 100%; font-size: 14px; outline: none; font-weight: bold; box-sizing: border-box; }
@@ -100,7 +100,7 @@ let activeOscs = {};
 
 // Meantone 1/4 osnova po tvojih podatkih (za A=415)
 const mtBase = [248.2, 259.4, 277.5, 296.9, 310.3, 332.0, 346.9, 371.2, 387.9, 415.0, 444.0, 464.0];
-const noteNames = ["C", "Cis", "D", "Dis", "E", "F", "Fis", "G", "Gis", "A", "B", "H"];
+const noteNames = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "B♭", "B"];
 let currentTargets = [...mtBase];
 
 function init() {
