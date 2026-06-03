@@ -1,6 +1,6 @@
 {
-  "name": "Zgodovinske uglasitve Nova akademija",
-  "short_name": "Zgodovinski uglaševalec",
+  "name": "Zgodovinske uglasitve",
+  "short_name": "Uglasitve",
   "description": "Zgodovisnke uglasitve Nova Akademija",
   "start_url": "./index.html",
   "display": "standalone",
