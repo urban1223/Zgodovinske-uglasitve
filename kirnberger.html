@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <title>Kirnberger III</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { 
+            --bg: #0d0d10; --panel: #141b29; --amber: #f2cc5a; 
+            --text: #e8e0d0; --green: #4cdb7a; --red: #e05050;
+        }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .panel { background: var(--panel); padding: 30px; border-radius: 35px; width: 100%; max-width: 550px; text-align: center; border: 1px solid #2a2a35; }
+
+        .gauge-container { 
+            position: relative; width: 100%; height: 220px; margin-top: 10px; 
+            background: var(--bg); border-radius: 20px; border: 1px solid #334; overflow: hidden;
+        }
+        .needle { 
+            width: 3px; height: 160px; background: var(--amber); 
+            position: absolute; left: 50%; bottom: 20px; 
+            transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); 
+            z-index: 10; box-shadow: 0 0 15px var(--amber);
+            transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1); 
+        }
+        .marker { position: absolute; width: 2px; height: 15px; background: #445; left: 50%; bottom: 20px; transform-origin: bottom center; }
+        .marker.zero { background: var(--green); height: 25px; width: 3px; box-shadow: 0 0 10px var(--green); }
+        .marker-label { position: absolute; font-size: 11px; color: #556; width: 40px; text-align: center; left: 50%; bottom: 20px; transform-origin: bottom center; font-family: monospace; }
+
+        .big-note { font-size: 100px; font-weight: 900; color: var(--amber); margin: 5px 0; letter-spacing: -3px; }
+        .stats-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
+        .cents-val { font-size: 20px; font-weight: bold; font-family: monospace; color: var(--amber); }
+        .hz-display { font-size: 14px; color: #556; font-family: monospace; align-self: center; }
+
+        .settings-bar { display: grid; grid-template-columns: 1fr 1fr; background: var(--bg); padding: 15px; border-radius: 15px; margin: 15px 0; gap: 20px; border: 1px solid #2a2a35; align-items: end; }
+        .setting-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        label { font-size: 9px; color: #889; text-transform: uppercase; letter-spacing: 1px; }
+        input, select { background: #141b29; border: 1px solid #445; color: var(--amber); padding: 8px; border-radius: 5px; text-align: center; width: 100%; font-size: 14px; outline: none; font-weight: bold; box-sizing: border-box; }
+        
+        .mic-btn { width: 100%; padding: 18px; border-radius: 15px; border: 2px solid var(--amber); background: transparent; color: var(--amber); cursor: pointer; font-weight: bold; margin-bottom: 20px; font-size: 16px; transition: 0.2s; }
+        
+        .synth-controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 15px 0; }
+        .octave-btn { background: #334; border: none; color: white; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 18px; }
+        #octave-label { font-weight: bold; min-width: 110px; font-size: 18px; color: var(--amber); text-align: center; }
+
+        .keyboard { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 10px; }
+        .key { background: #141b29; border: 1px solid #334; padding: 20px 0; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; color: #aaa; transition: 0.1s; }
+        .key.playing { background: var(--amber); color: #000; border-color: var(--amber); box-shadow: 0 0 15px var(--amber); }
+    </style>
+</head>
+<body>
+
+<div class="panel">
+    <div style="font-size: 10px; letter-spacing: 4px; color: #556; margin-bottom: 10px;">Kirnberger III</div>
+
+    <div class="gauge-container">
+        <div id="markers"></div>
+        <div class="needle" id="needle"></div>
+    </div>
+
+    <div class="big-note" id="note-name">--</div>
+    
+    <div class="stats-row">
+        <div class="cents-val" id="cents-display">0.0 ¢</div>
+        <div class="hz-display" id="hz-display">0.00 Hz</div>
+    </div>
+    
+    <button id="mic-btn" class="mic-btn" onclick="toggleMic()">VKLJUČI MIKROFON</button>
+
+    <div class="settings-bar">
+        <div class="setting-item">
+            <label>Referenca A</label>
+            <input type="number" id="a-ref" value="415" step="0.1" oninput="updateAll()">
+        </div>
+        <div class="setting-item">
+            <label>Valovanje</label>
+            <select id="wave-type" onchange="updateAll()">
+                <option value="triangle" selected>Trikotni</option>
+                <option value="sine">Sinusni</option>
+                <option value="sawtooth">Žagasti</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="synth-controls">
+        <button class="octave-btn" onclick="changeOctave(-1)">−</button>
+        <span id="octave-label">OKTAVA: 3</span>
+        <button class="octave-btn" onclick="changeOctave(1)">+</button>
+    </div>
+
+    <div class="keyboard" id="kb"></div>
+</div>
+
+<script>
+let audioCtx, analyser, micStream;
+let currentOctave = 3;
+let currentNeedleAngle = 0;
+let activeOscs = {};
+
+// Kirnberger III frekvence (osnova za A=415)
+const k3Base = [248.4, 261.7, 277.6, 294.4, 310.2, 331.3, 349.0, 371.4, 392.6, 415.0, 441.7, 465.3];
+const noteNames = ["C", "Cis", "D", "Dis", "E", "F", "Fis", "G", "Gis", "A", "B", "H"];
+let currentTargets = [...k3Base];
+
+function init() {
+    const markersDiv = document.getElementById('markers');
+    for (let i = -50; i <= 50; i += 10) {
+        const m = document.createElement('div');
+        m.className = 'marker' + (i === 0 ? ' zero' : '');
+        m.style.transform = `translateX(-50%) rotate(${i}deg) translateY(-165px)`;
+        markersDiv.appendChild(m);
+        
+        const l = document.createElement('div');
+        l.className = 'marker-label';
+        l.innerText = i === 0 ? "0" : (i > 0 ? "+" + i : i);
+        l.style.transform = `translateX(-50%) rotate(${i}deg) translateY(-135px)`;
+        markersDiv.appendChild(l);
+    }
+    updateAll();
+    renderKeyboard();
+}
+
+function updateAll() {
+    let aVal = parseFloat(document.getElementById('a-ref').value) || 415;
+    let ratio = aVal / 415.0;
+    currentTargets = k3Base.map(f => f * ratio);
+    
+    const wType = document.getElementById('wave-type').value;
+    Object.keys(activeOscs).forEach(idx => {
+        activeOscs[idx].osc.frequency.setTargetAtTime(getFreq(idx), audioCtx.currentTime, 0.03);
+        activeOscs[idx].osc.type = wType;
+    });
+}
+
+function changeOctave(dir) {
+    currentOctave = Math.max(1, Math.min(6, currentOctave + dir));
+    document.getElementById('octave-label').innerText = `OKTAVA: ${currentOctave}`;
+    updateAll();
+}
+
+function renderKeyboard() {
+    const kb = document.getElementById('kb');
+    kb.innerHTML = '';
+    noteNames.forEach((name, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'key' + (activeOscs[i] ? ' playing' : '');
+        btn.id = 'key-' + i;
+        btn.innerText = name;
+        btn.onclick = () => toggleTone(i);
+        kb.appendChild(btn);
+    });
+}
+
+function getFreq(idx) {
+    return currentTargets[idx] * Math.pow(2, currentOctave - 3);
+}
+
+function toggleTone(idx) {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    if (activeOscs[idx]) {
+        activeOscs[idx].gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
+        activeOscs[idx].osc.stop(audioCtx.currentTime + 0.1);
+        delete activeOscs[idx];
+        document.getElementById('key-' + idx).classList.remove('playing');
+    } else {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = document.getElementById('wave-type').value;
+        osc.frequency.setValueAtTime(getFreq(idx), audioCtx.currentTime);
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.05);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start();
+        activeOscs[idx] = { osc, gain };
+        document.getElementById('key-' + idx).classList.add('playing');
+    }
+}
+
+async function toggleMic() {
+    const btn = document.getElementById('mic-btn');
+    if (analyser) { 
+        analyser = null; 
+        if(micStream) micStream.getTracks().forEach(t => t.stop());
+        btn.innerText = "VKLJUČI MIKROFON"; return; 
+    }
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    try {
+        micStream = await navigator.mediaDevices.getUserMedia({ 
+            audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } 
+        });
+        const source = audioCtx.createMediaStreamSource(micStream);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 8192;
+        source.connect(analyser);
+        btn.innerText = "USTAVI MIKROFON";
+        draw();
+    } catch (e) { alert("Mikrofon ni dostopen."); }
+}
+
+function autoCorrelate(buf, sampleRate) {
+    let rms = 0;
+    for (let i = 0; i < buf.length; i++) {
+        buf[i] *= 0.5 * (1 - Math.cos(2 * Math.PI * i / (buf.length - 1)));
+        rms += buf[i] * buf[i];
+    }
+    if (Math.sqrt(rms/buf.length) < 0.02) return -1;
+
+    let n = buf.length / 2;
+    let correlations = new Float32Array(n);
+    for (let offset = 0; offset < n; offset++) {
+        for (let i = 0; i < n; i++) correlations[offset] += buf[i] * buf[i+offset];
+    }
+
+    let d = 0; while (correlations[d] > correlations[d+1]) d++;
+    let maxV = -1, maxP = -1;
+    for (let i = d; i < n; i++) {
+        if (correlations[i] > maxV) { maxV = correlations[i]; maxP = i; }
+    }
+    let x0 = correlations[maxP-1], x1 = correlations[maxP], x2 = correlations[maxP+1];
+    let a = (x0 + x2 - 2 * x1) / 2, b = (x2 - x0) / 2;
+    return a === 0 ? -1 : sampleRate / (maxP - b / (2 * a));
+}
+
+function draw() {
+    if (!analyser) return;
+    const buffer = new Float32Array(analyser.fftSize);
+    analyser.getFloatTimeDomainData(buffer);
+    let freq = autoCorrelate(buffer, audioCtx.sampleRate);
+    
+    if (freq !== -1 && isFinite(freq)) {
+        let closestIdx = 0, minHzDiff = Infinity, targetFreq = 0;
+        for (let i = 0; i < 12; i++) {
+            for (let oct = -2; oct <= 2; oct++) {
+                let t = currentTargets[i] * Math.pow(2, oct);
+                let diff = Math.abs(freq - t);
+                if (diff < minHzDiff) { minHzDiff = diff; closestIdx = i; targetFreq = t; }
+            }
+        }
+        let cents = 1200 * Math.log2(freq / targetFreq);
+        currentNeedleAngle += (cents - currentNeedleAngle) * 0.22;
+        const needleEl = document.getElementById('needle');
+        const noteEl = document.getElementById('note-name');
+        const cd = document.getElementById('cents-display');
+        const hzDisplay = document.getElementById('hz-display');
+        let displayAngle = Math.max(-50, Math.min(50, currentNeedleAngle));
+        needleEl.style.transform = `translateX(-50%) rotate(${displayAngle}deg)`;
+        noteEl.textContent = noteNames[closestIdx];
+        if (Math.abs(cents) < 1.5) {
+            noteEl.style.color = "var(--green)";
+            needleEl.style.background = "var(--green)";
+            cd.style.color = "var(--green)";
+        } else {
+            noteEl.style.color = "var(--amber)";
+            needleEl.style.background = "var(--amber)";
+            cd.style.color = "var(--amber)";
+        }
+        cd.textContent = (cents > 0 ? "+" : "") + cents.toFixed(1) + " ¢";
+        hzDisplay.textContent = freq.toFixed(2) + " Hz";
+    }
+    requestAnimationFrame(draw);
+}
+
+init();
+</script>
+</body>
+</html>

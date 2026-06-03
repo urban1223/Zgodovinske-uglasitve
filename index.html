@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <title>Nova Akademija - Master Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#141b29">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <style>
+        :root { 
+            --bg: #141b29; 
+            --panel: #1e2638; 
+            --amber: #f2cc5a; 
+            --text: #e8e0d0; 
+            --black: #000000;
+        }
+        body { 
+            background: var(--bg); color: var(--text); 
+            font-family: 'Segoe UI', sans-serif; margin: 0; padding: 40px 20px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; box-sizing: border-box;
+        }
+
+        .container { 
+            width: 100%; max-width: 800px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; 
+        }
+        .logo { font-size: 32px; font-weight: 900; letter-spacing: 4px; color: var(--amber); margin-bottom: 5px; text-align: center; }
+        .subtitle { font-size: 12px; color: #556; text-transform: uppercase; margin-bottom: 50px; letter-spacing: 6px; text-align: center; }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 15px; 
+            width: 100%;
+            justify-content: center;
+            align-content: center;
+        }
+
+        .card { 
+            background: var(--panel); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+            padding: 30px 10px; 
+            border-radius: 18px; 
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-height: 100px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            box-sizing: border-box;
+        }
+
+        .card:hover { 
+            border-color: var(--amber); 
+            transform: translateY(-5px); 
+            box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+            background: #232d42;
+        }
+
+        .card h3 { 
+            margin: 0; 
+            color: var(--amber); 
+            font-size: 15px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        /* Prilagoditev za telefone - preklop v 2 stolpca za boljšo čitljivost, še vedno sredinsko */
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: repeat(2, 1fr); }
+            body { padding: 20px 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo">NOVA AKADEMIJA</div>
+        <div class="subtitle">Master Tuning Hub</div>
+        
+        <div class="grid">
+            
+            <a href="pytagorean.html" class="card">
+                <h3>Pytagorean</h3>
+            </a>
+            <a href="just.html" class="card">
+                <h3>Just</h3>
+            </a>
+            <a href="meantone.html" class="card">
+                <h3>Meantone 1/4</h3>
+            </a>
+            <a href="meantone16.html" class="card">
+                <h3>Meantone 1/6</h3>
+            </a>
+
+            <a href="earlyfrench.html" class="card">
+                <h3>Early French</h3>
+            </a>
+            <a href="rameau.html" class="card">
+                <h3>Rameau</h3>
+            </a>
+            <a href="rousseau.html" class="card">
+                <h3>Rousseau</h3>
+            </a>
+            <a href="violin.html" class="card">
+                <h3>Violin</h3>
+            </a>
+
+            <a href="kirnberger.html" class="card">
+                <h3>Kirnberger</h3>
+            </a>
+            <a href="werkmeister.html" class="card">
+                <h3>Werkmeister</h3>
+            </a>
+            <a href="aron.html" class="card">
+                <h3>Aron</h3>
+            </a>
+            <a href="valotti.html" class="card">
+                <h3>Valotti</h3>
+            </a>
+
+        </div>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Aplikacija pripravljena za brezhibno offline delovanje!', reg))
+                    .catch(err => console.log('Napaka pri nalaganju aplikacije:', err));
+            });
+        }
+    </script>
+
+</body>
+</html>

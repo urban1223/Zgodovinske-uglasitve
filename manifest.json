@@ -1,0 +1,22 @@
+{
+  "name": "Nova Akademija Tuner",
+  "short_name": "NATuner",
+  "description": "Master Tuning sistem za Nova Akademija",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#141b29",
+  "theme_color": "#141b29",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/fluent-systems-filled/192/f2cc5a/tuning-fork.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://img.icons8.com/fluent-systems-filled/512/f2cc5a/tuning-fork.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
