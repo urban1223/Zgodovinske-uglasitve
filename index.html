@@ -2,7 +2,7 @@
 <html lang="sl">
 <head>
     <meta charset="UTF-8">
-    <title>Nova Akademija - Master Hub</title>
+    <title>Nova Akademija - Uglaševalec z zgodovinskimi uglasitvami</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <link rel="manifest" href="manifest.json">
@@ -12,17 +12,49 @@
 
     <style>
         :root { 
-            --bg: #141b29; 
-            --panel: #1e2638; 
-            --amber: #f2cc5a; 
-            --text: #e8e0d0; 
-            --black: #000000;
+            --bg-black: #000000;         
+            --panel: #141b29;             
+            --panel-hover: #1e2638;       
+            --amber: hsl(45, 85%, 65%);        
+            --text: hsl(40, 15%, 92%);         
+            
+            --shadow-gold-hover: 0 15px 45px -5px hsl(45 85% 65% / 0.4);
         }
+
         body { 
-            background: var(--bg); color: var(--text); 
+            background-color: var(--bg-black);
+            color: var(--text); 
             font-family: 'Segoe UI', sans-serif; margin: 0; padding: 40px 20px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             min-height: 100vh; box-sizing: border-box;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            
+            /* Slika je spodaj, popolnoma ostra */
+            background-image: url('ozadje.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            
+            z-index: -2;
+        }
+
+        /* Plast za natančno 80% črno zatemnitev */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--bg-black);
+            
+            /* 80% zatemnitev (0.80), slika se vidi le skozi preostalih 20% prosojnosti */
+            opacity: 0.85; 
+            
+            z-index: -1;
         }
 
         .container { 
@@ -30,8 +62,23 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             text-align: center; 
         }
-        .logo { font-size: 32px; font-weight: 900; letter-spacing: 4px; color: var(--amber); margin-bottom: 5px; text-align: center; }
-        .subtitle { font-size: 12px; color: #556; text-transform: uppercase; margin-bottom: 50px; letter-spacing: 6px; text-align: center; }
+        .logo { 
+            font-size: 32px; 
+            font-weight: 900; 
+            letter-spacing: 4px; 
+            color: var(--amber); 
+            margin-bottom: 5px; 
+            text-align: center;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.9);
+        }
+        .subtitle { 
+            font-size: 12px; 
+            color: hsl(220, 14%, 60%); 
+            text-transform: uppercase; 
+            margin-bottom: 50px; 
+            letter-spacing: 6px; 
+            text-align: center; 
+        }
         
         .grid { 
             display: grid; 
@@ -44,27 +91,27 @@
 
         .card { 
             background: var(--panel); 
-            border: 1px solid rgba(255, 255, 255, 0.05); 
+            border: 1px solid rgba(255, 255, 255, 0.04); 
             padding: 30px 10px; 
             border-radius: 18px; 
             text-decoration: none;
             color: inherit;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
             min-height: 100px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.7); 
             box-sizing: border-box;
         }
 
         .card:hover { 
             border-color: var(--amber); 
             transform: translateY(-5px); 
-            box-shadow: 0 12px 30px rgba(0,0,0,0.6);
-            background: #232d42;
+            box-shadow: var(--shadow-gold-hover);
+            background: var(--panel-hover);
         }
 
         .card h3 { 
@@ -77,7 +124,7 @@
             line-height: 1.2;
         }
 
-        /* Prilagoditev za telefone - preklop v 2 stolpca za boljšo čitljivost, še vedno sredinsko */
+        /* Prilagoditev za telefone */
         @media (max-width: 600px) {
             .grid { grid-template-columns: repeat(2, 1fr); }
             body { padding: 20px 15px; }
@@ -87,45 +134,45 @@
 <body>
 
     <div class="container">
-        <div class="logo">NOVA AKADEMIJA</div>
-        <div class="subtitle">Master Tuning Hub</div>
+        <div class="logo">Zgodovinske uglasitve</div>
+        <div class="subtitle">Društvo Nova akademija</div>
         
         <div class="grid">
             
             <a href="pytagorean.html" class="card">
-                <h3>Pytagorean</h3>
+                <h3>Pitagorejska</h3>
             </a>
             <a href="just.html" class="card">
-                <h3>Just</h3>
+                <h3>Naravna</h3>
             </a>
             <a href="meantone4.html" class="card">
-                <h3>Meantone 1/4</h3>
+                <h3>Srednjetonska 1/4</h3>
             </a>
             <a href="meantone6.html" class="card">
-                <h3>Meantone 1/6</h3>
+                <h3>Srednjetonska 1/6</h3>
             </a>
 
             <a href="earlyfrench.html" class="card">
-                <h3>Early French</h3>
+                <h3>Zgodnja francoska</h3>
             </a>
             <a href="rameau.html" class="card">
                 <h3>Rameau</h3>
             </a>
             <a href="rousseau.html" class="card">
-                <h3>Rousseau</h3>
+                <h3>Rousseau III</h3>
             </a>
             <a href="violin.html" class="card">
-                <h3>Violin</h3>
+                <h3>Violinska</h3>
             </a>
 
             <a href="kirnberger.html" class="card">
-                <h3>Kirnberger</h3>
+                <h3>Kirnberger III</h3>
             </a>
             <a href="werkmeister.html" class="card">
-                <h3>Werkmeister</h3>
+                <h3>Werkmeister III</h3>
             </a>
             <a href="aron.html" class="card">
-                <h3>Aron</h3>
+                <h3>Aron-Neidhardt</h3>
             </a>
             <a href="valotti.html" class="card">
                 <h3>Valotti</h3>
