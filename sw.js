@@ -11,15 +11,19 @@ const ASSETS = [
   'valotti.html',
   'violin.html',
   'werkmeister.html',
-  'meantone.html',
-  'meantone16.html'
+  'meantone4.html',
+  'meantone6.html',
+  'ozadje.jpg'
 ];
 
 // Shranjevanje datotek v lokalni cache ob namestitvi
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
+      // Če kakšna datoteka s seznama še ne obstaja, se namestitev ne bo sesula
+      return Promise.allSettled(
+        ASSETS.map(asset => cache.add(asset))
+      );
     })
   );
 });

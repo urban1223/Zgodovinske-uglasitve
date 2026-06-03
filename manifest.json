@@ -1,8 +1,8 @@
 {
-  "name": "Nova Akademija Tuner",
+  "name": "Zgodovinske uglasitve Nova akademija",
   "short_name": "NATuner",
-  "description": "Master Tuning sistem za Nova Akademija",
-  "start_url": "index.html",
+  "description": "Zgodovinske uglasitve Nova Akademija",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#141b29",
   "theme_color": "#141b29",
