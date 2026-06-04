@@ -96,25 +96,47 @@
         .enh-btn { background: #141b29; border: 1px solid #334; color: #889; padding: 6px 2px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: bold; transition: 0.2s; }
         .enh-btn.active { background: var(--amber); color: #000; border-color: var(--amber); }
 
-        /* Synth Controls */
-        .synth-controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 15px 0; }
-        .octave-btn { background: #334; border: none; color: white; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 18px; }
-        #octave-label { font-weight: bold; min-width: 110px; font-size: 18px; color: var(--amber); text-align: center; }
-
-        .keyboard { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 10px; }
-        .key { background: #141b29; border: 1px solid #334; padding: 20px 0; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; color: #aaa; transition: 0.1s; }
+        .keyboard { 
+            display: grid; 
+            grid-template-columns: repeat(6, 1fr); 
+            gap: 10px; 
+            margin-top: 10px; 
+            width: 100%; 
+            box-sizing: border-box; 
+        }
+        .key { 
+            background: #141b29; 
+            border: 1px solid #334; 
+            padding: 22px 0; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: bold; 
+            color: #aaa; 
+            transition: 0.1s; 
+            box-sizing: border-box; 
+            width: 100%;
+        }
         .key.playing { background: var(--amber); color: #000; border-color: var(--amber); box-shadow: 0 0 15px var(--amber); }
 
+        .oct-ctrl { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; margin-top: 8px; opacity: 0.7; user-select: none; }
+        .oct-arrow { padding: 4px 6px; cursor: pointer; transition: color 0.1s; font-size: 12px; }
+        .oct-arrow:hover { color: var(--amber); }
+        .key.playing .oct-arrow:hover { color: #000; }
+
         @media (max-width: 500px) {
-            .panel { padding: 20px 15px; }
-            .keyboard { grid-template-columns: repeat(3, 1fr); } /* Stabilizacija tipkovnice na ozkih telefonih */
+            .panel { padding: 20px 12px; }
+            .keyboard { gap: 6px; }
+            .key { padding: 18px 0; font-size: 15px; }
+            .oct-ctrl { gap: 4px; font-size: 10px; }
+            .oct-arrow { padding: 4px; }
         }
     </style>
 </head>
 <body>
 
 <div class="panel">
-    <div style="font-size: 10px; letter-spacing: 4px; color: #556; margin-bottom: 10px;">Naravna</div>
+    <div style="font-size: 10px; letter-spacing: 4px; color: #556; margin-bottom: 10px;">Naravna uglasitev</div>
 
     <div class="gauge-container">
         <div id="markers"></div>
@@ -132,7 +154,7 @@
 
     <div class="settings-bar">
         <div class="setting-item">
-            <label>A Ref (Hz)</label>
+            <label>Referenca A</label>
             <input type="number" id="a-ref" value="415" step="0.1" oninput="updateAll()">
         </div>
         <div class="setting-item">
@@ -145,7 +167,7 @@
         </div>
         <div class="setting-item">
             <label>Sistem</label>
-            <button class="refresh-btn" onclick="updateAll()">OSVEŽI</button>
+            <button class="refresh-btn" onclick="updateAll()">Osveži</button>
         </div>
     </div>
 
@@ -172,19 +194,13 @@
         </div>
     </div>
 
-    <div class="synth-controls">
-        <button class="octave-btn" onclick="changeOctave(-1)">−</button>
-        <span id="octave-label">OKTAVA: 3</span>
-        <button class="octave-btn" onclick="changeOctave(1)">+</button>
-    </div>
-
     <div class="keyboard" id="kb"></div>
 </div>
 
 <script>
 let audioCtx, analyser, micStream;
 let baseC = 415 / 1.6667; 
-let currentOctave = 3;
+let noteOctaves = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
 let currentNeedleAngle = 0;
 let noteNames = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "B♭", "B"];
 let ratios = [1, 1.0417, 1.1111, 1.1719, 1.25, 1.3333, 1.3887, 1.5, 1.6, 1.6667, 1.7778, 1.875];
@@ -228,10 +244,15 @@ function setEnh(idx, name, ratio, act, inact) {
     renderKeyboard();
 }
 
-function changeOctave(dir) {
-    currentOctave = Math.max(1, Math.min(6, currentOctave + dir));
-    document.getElementById('octave-label').innerText = `OKTAVA: ${currentOctave}`;
-    updateAll();
+function changeNoteOctave(idx, dir, event) {
+    if (event) event.stopPropagation();
+    noteOctaves[idx] = Math.max(1, Math.min(6, noteOctaves[idx] + dir));
+    
+    document.getElementById(`oct-val-${idx}`).innerText = noteOctaves[idx];
+    
+    if (activeOscs[idx]) {
+        activeOscs[idx].osc.frequency.setTargetAtTime(getFreq(idx), audioCtx.currentTime, 0.03);
+    }
 }
 
 function renderKeyboard() {
@@ -241,14 +262,22 @@ function renderKeyboard() {
         const btn = document.createElement('button');
         btn.className = 'key' + (activeOscs[i] ? ' playing' : '');
         btn.id = 'key-' + i;
-        btn.innerText = name;
         btn.onclick = () => toggleTone(i);
+        
+        btn.innerHTML = `
+            <div>${name}</div>
+            <div class="oct-ctrl">
+                <span class="oct-arrow" onclick="changeNoteOctave(${i}, -1, event)">▼</span>
+                <span id="oct-val-${i}" style="font-family: monospace; font-weight: bold;">${noteOctaves[i]}</span>
+                <span class="oct-arrow" onclick="changeNoteOctave(${i}, 1, event)">▲</span>
+            </div>
+        `;
         kb.appendChild(btn);
     });
 }
 
 function getFreq(idx) {
-    return baseC * ratios[idx] * Math.pow(2, currentOctave - 3);
+    return baseC * ratios[idx] * Math.pow(2, noteOctaves[idx] - 3);
 }
 
 function toggleTone(idx) {
@@ -279,7 +308,7 @@ async function toggleMic() {
     if (analyser) { 
         analyser = null; 
         if(micStream) micStream.getTracks().forEach(t => t.stop());
-        btn.innerText = "VKLJUČI MIKROFON"; return; 
+        btn.innerText = "TURN ON"; return; 
     }
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     try {
@@ -288,9 +317,9 @@ async function toggleMic() {
         analyser = audioCtx.createAnalyser();
         analyser.fftSize = 4096;
         source.connect(analyser);
-        btn.innerText = "USTAVI MIKROFON";
+        btn.innerText = "TURN OFF";
         draw();
-    } catch (e) { alert("Mikrofon ni dostopen."); }
+    } catch (e) { alert("Acces to mic is denied."); }
 }
 
 function autoCorrelate(buf, sampleRate) {
