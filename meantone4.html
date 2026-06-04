@@ -10,6 +10,13 @@
             --text: #e8e0d0; --green: #4cdb7a; --red: #e05050;
             --bg-black: #000000;
         }
+        html, body {
+            max-width: 100vw;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body { 
             background: var(--bg-black); 
             color: var(--text); 
@@ -18,11 +25,8 @@
             flex-direction: column; 
             align-items: center; 
             padding: 20px 15px; 
-            margin: 0; 
             min-height: 100vh;
             justify-content: center;
-            overflow-x: hidden;
-            box-sizing: border-box;
             position: relative;
         }
 
@@ -54,6 +58,7 @@
             text-align: center; 
             border: 1px solid #2a2a35; 
             box-sizing: border-box;
+            margin: 0 auto;
         }
 
         .gauge-container { 
@@ -92,13 +97,14 @@
         .enh-btn { background: #141b29; border: 1px solid #334; color: #889; padding: 6px 2px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: bold; transition: 0.2s; }
         .enh-btn.active { background: var(--amber); color: #000; border-color: var(--amber); }
 
-        /* POPRAVLJENO: Dodan box-sizing za celotno mrezo in gumbe, da ostanejo znotraj okvira */
+        /* TIPKOVNICA: Popolnoma sredinsko poravnana in prilagojena zaslonu */
         .keyboard { 
             display: grid; 
             grid-template-columns: repeat(6, 1fr); 
             gap: 10px; 
-            margin-top: 10px; 
+            margin: 15px auto 0 auto; 
             width: 100%; 
+            max-width: 100%;
             box-sizing: border-box; 
         }
         .key { 
@@ -122,11 +128,13 @@
         .key.playing .oct-arrow:hover { color: #000; }
 
         @media (max-width: 500px) {
-            .panel { padding: 20px 12px; }
-            .keyboard { gap: 6px; }
-            .key { padding: 18px 0; font-size: 15px; }
-            .oct-ctrl { gap: 4px; font-size: 10px; }
-            .oct-arrow { padding: 4px; }
+            .panel { padding: 16px 8px !important; }
+            .keyboard { gap: 5px; }
+            .key { padding: 16px 0; font-size: 13px; }
+            .oct-ctrl { gap: 2px; font-size: 9px; }
+            .oct-arrow { padding: 2px; }
+            .enharmonic-selector { gap: 3px; padding: 6px; }
+            .enh-btn { font-size: 9px; padding: 4px 1px; }
         }
     </style>
 </head>
