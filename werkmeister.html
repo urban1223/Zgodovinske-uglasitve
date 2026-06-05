@@ -66,11 +66,18 @@
             background: var(--bg); border-radius: 20px; border: 1px solid #334; overflow: hidden;
         }
         .needle { 
-            width: 3px; height: 160px; background: var(--amber); 
-            position: absolute; left: 50%; bottom: 20px; 
-            transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); 
-            z-index: 10; box-shadow: 0 0 15px var(--amber);
-            transition: transform 0.15s cubic-bezier(0.1, 0.5, 0.1, 1); 
+            width: 6px; /* Odebeljena igla za boljšo vizualno sledljivost */
+            height: 160px; 
+            background: var(--amber); 
+            position: absolute; 
+            left: 50%; 
+            bottom: 20px; 
+            border-radius: 3px 3px 0 0; /* Lepo zaobljen, oster vrh igle */
+            transform-origin: bottom center; 
+            transform: translateX(-50%) rotate(0deg); 
+            z-index: 10; 
+            box-shadow: 0 0 15px var(--amber);
+            transition: none; 
         }
         .marker { position: absolute; width: 2px; height: 15px; background: #445; left: 50%; bottom: 20px; transform-origin: bottom center; }
         .marker.zero { background: var(--green); height: 25px; width: 3px; box-shadow: 0 0 10px var(--green); }
@@ -173,7 +180,20 @@
 let audioCtx, analyser, micStream;
 let activeOscs = {};
 let noteOctaves = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
+
+// Spremenljivke za analogni Flow Mode in fiziko igle
 let currentNeedleAngle = 0;
+let needleVelocity = 0; 
+let targetCents = 0; 
+let closestIdx = 0;  
+let lastFrameTime = performance.now();
+
+// Avtomatizacija in filtriranje
+let lowPassFilter = null;
+let lastRms = 0;
+let attackTime = 0;
+let stableFrames = 0;
+let lastValidFreq = -1;
 
 const noteNames = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "B♭", "B"];
 const wm3Cents = [0, 90.22, 192.18, 294.13, 390.22, 498.04, 588.27, 696.09, 792.18, 888.27, 996.09, 1092.18];
@@ -273,6 +293,7 @@ async function toggleMic() {
     const btn = document.getElementById('mic-btn');
     if (analyser) { 
         analyser = null; 
+        if(lowPassFilter) { lowPassFilter.disconnect(); lowPassFilter = null; }
         if(micStream) micStream.getTracks().forEach(t => t.stop());
         btn.innerText = "VKLJUČI MIKROFON"; return; 
     }
@@ -280,71 +301,146 @@ async function toggleMic() {
     try {
         micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const source = audioCtx.createMediaStreamSource(micStream);
+        
+        lowPassFilter = audioCtx.createBiquadFilter();
+        lowPassFilter.type = "lowpass";
+        lowPassFilter.frequency.setValueAtTime(1200, audioCtx.currentTime);
+        
         analyser = audioCtx.createAnalyser();
         analyser.fftSize = 8192;
-        source.connect(analyser);
+        
+        source.connect(lowPassFilter);
+        lowPassFilter.connect(analyser);
+        
         btn.innerText = "USTAVI MIKROFON";
         draw();
     } catch (e) { alert("Mikrofon ni dostopen."); }
 }
 
 function autoCorrelate(buf, sampleRate) {
-    let rms = 0; for (let i=0; i<buf.length; i++) rms += buf[i]*buf[i];
-    if (Math.sqrt(rms/buf.length) < 0.015) return -1;
-    let n = buf.length, correlations = new Float32Array(n);
-    for (let offset=0; offset<n; offset++) {
-        for (let i=0; i<n-offset; i++) correlations[offset] += buf[i]*buf[i+offset];
+    let rms = 0; 
+    for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
+    rms = Math.sqrt(rms / buf.length);
+    
+    if (rms < 0.012) {
+        lastRms = rms;
+        stableFrames = 0;
+        return -1;
     }
-    let d=0; while (correlations[d] > correlations[d+1]) d++;
-    let maxV=-1, maxP=-1;
-    for (let i=d; i<n; i++) { if (correlations[i]>maxV) { maxV=correlations[i]; maxP=i; } }
-    let x0=correlations[maxP-1], x1=correlations[maxP], x2=correlations[maxP+1];
-    let a=(x0+x2-2*x1)/2, b=(x2-x0)/2;
-    return a === 0 ? -1 : sampleRate / (maxP - b/(2*a));
+    
+    let isPlucked = (rms > lastRms * 2.0) && (lastRms > 0.005);
+    lastRms = rms;
+
+    if (isPlucked) {
+        attackTime = Date.now();
+        stableFrames = 0;
+        return -2;
+    }
+
+    if (Date.now() - attackTime < 20) {
+        return -2;
+    }
+
+    let n = buf.length;
+    let correlations = new Float32Array(n);
+    
+    for (let offset = 0; offset < n; offset++) {
+        for (let i = 0; i < n - offset; i++) {
+            correlations[offset] += buf[i] * buf[i + offset];
+        }
+    }
+    
+    let d = 0; 
+    while (d < n - 1 && correlations[d] > correlations[d + 1]) d++;
+    
+    let maxV = -1, maxP = -1;
+    for (let i = d; i < n; i++) {
+        if (correlations[i] > maxV) {
+            maxV = correlations[i];
+            maxP = i;
+        }
+    }
+    
+    if (maxP === -1 || maxP === 0 || maxP === n - 1) return -1;
+
+    let x0 = correlations[maxP - 1];
+    let x1 = correlations[maxP];
+    let x2 = correlations[maxP + 1];
+    let a = (x0 + x2 - 2 * x1) / 2;
+    let b = (x2 - x0) / 2;
+    
+    if (a === 0) return sampleRate / maxP;
+    
+    let exactPosition = maxP - b / (2 * a);
+    return sampleRate / exactPosition;
 }
 
 function draw() {
     if (!analyser) return;
     const buffer = new Float32Array(analyser.fftSize);
     analyser.getFloatTimeDomainData(buffer);
+    
     let freq = autoCorrelate(buffer, audioCtx.sampleRate);
     
-    if (freq !== -1 && isFinite(freq)) {
+    if (freq !== -1 && freq !== -2 && isFinite(freq)) {
         const freqs = getNoteFrequencies();
-        let closestIdx=0, minHz=Infinity, targetCents=0;
+        let minHz = Infinity;
 
-        for (let i=0; i<12; i++) {
-            for (let oct=-3; oct<=3; oct++) {
+        for (let i = 0; i < 12; i++) {
+            for (let oct = -3; oct <= 3; oct++) {
                 let target = freqs[i] * Math.pow(2, oct);
                 let diff = Math.abs(freq - target);
                 if (diff < minHz) { 
-                    minHz = diff; closestIdx = i; 
+                    minHz = diff; 
+                    closestIdx = i; 
                     targetCents = 1200 * Math.log2(freq / target); 
                 }
             }
         }
+        lastValidFreq = freq;
+    }
 
-        currentNeedleAngle += (targetCents - currentNeedleAngle) * 0.20;
-        const needleEl = document.getElementById('needle');
-        const noteEl = document.getElementById('note-name');
-        
-        let displayAngle = Math.max(-50, Math.min(50, currentNeedleAngle));
-        needleEl.style.transform = `translateX(-50%) rotate(${displayAngle}deg)`;
+    // IZRAČUN ČASOVNE DELTE (za popolnih 60fps+ glajenje)
+    const now = performance.now();
+    // Normaliziramo na ~16.67ms (kar je 1 cikel pri 60Hz)
+    const dt = Math.min(2, (now - lastFrameTime) / 16.666);
+    lastFrameTime = now;
+
+    // FIZIKA KORIGIRANA S ČASOVNIM FAKTORJEM (dt)
+    // Igla zdaj upošteva dejanski pretekli čas med okvirji zaslona
+    let targetVelocity = (targetCents - currentNeedleAngle) * 0.35; 
+    needleVelocity += (targetVelocity - needleVelocity) * 0.60 * dt;    
+    currentNeedleAngle += needleVelocity * dt;                           
+
+    // Minimalna stabilizacija v čistem centru
+    if (Math.abs(currentNeedleAngle) < 0.1 && Math.abs(needleVelocity) < 0.02) {
+        currentNeedleAngle = 0;
+        needleVelocity = 0;
+    }
+    
+    const needleEl = document.getElementById('needle');
+    const noteEl = document.getElementById('note-name');
+    
+    let displayAngle = Math.max(-50, Math.min(50, currentNeedleAngle));
+    needleEl.style.transform = `translateX(-50%) rotate(${displayAngle}deg)`;
+    
+    if (freq !== -1 && freq !== -2) {
         noteEl.textContent = noteNames[closestIdx];
-
-        if (Math.abs(targetCents) < 1.5) {
-            noteEl.style.color = "var(--green)";
-            needleEl.style.background = "var(--green)";
-            needleEl.style.boxShadow = "0 0 15px var(--green)";
-        } else {
-            noteEl.style.color = "var(--amber)";
-            needleEl.style.background = "var(--amber)";
-            needleEl.style.boxShadow = "0 0 10px var(--amber)";
-        }
-
-        document.getElementById('cents-display').textContent = (targetCents > 0 ? "+" : "") + targetCents.toFixed(1) + " ¢";
         document.getElementById('hz-display').textContent = freq.toFixed(2) + " Hz";
     }
+
+    if (Math.abs(currentNeedleAngle) <= 2.0) {
+        noteEl.style.color = "var(--green)";
+        needleEl.style.background = "var(--green)";
+        needleEl.style.boxShadow = "0 0 15px var(--green)";
+    } else {
+        noteEl.style.color = "var(--amber)";
+        needleEl.style.background = "var(--amber)";
+        needleEl.style.boxShadow = "0 0 10px var(--amber)";
+    }
+
+    document.getElementById('cents-display').textContent = (currentNeedleAngle > 0 ? "+" : "") + currentNeedleAngle.toFixed(1) + " ¢";
+    
     requestAnimationFrame(draw);
 }
 
