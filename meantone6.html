@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Srednjetonska 1/6</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         :root { 
             --bg: #0d0d10; --panel: #141b29; --amber: #f2cc5a; 
-            --text: #e8e0d0; --green: #4cdb7a;
+            --text: #e8e0d0; --green: #4cdb7a; --red: #e05050;
             --bg-black: #000000;
         }
         html, body {
@@ -64,43 +64,66 @@
         .gauge-container { 
             position: relative; width: 100%; height: 220px; margin-top: 10px; 
             background: var(--bg); border-radius: 20px; border: 1px solid #334; overflow: hidden;
+            box-sizing: border-box;
         }
         .needle { 
-            width: 3px; height: 160px; background: var(--amber); 
-            position: absolute; left: 50%; bottom: 20px; 
-            transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); 
-            z-index: 10; box-shadow: 0 0 15px var(--amber);
-            transition: transform 0.15s cubic-bezier(0.1, 0.5, 0.1, 1); 
+            width: 6px; 
+            height: 160px; 
+            background: var(--amber); 
+            position: absolute; 
+            left: 50%; 
+            bottom: 20px; 
+            border-radius: 3px 3px 0 0; 
+            transform-origin: bottom center; 
+            transform: translateX(-50%) rotate(0deg); 
+            z-index: 10; 
+            box-shadow: 0 0 15px var(--amber);
+            transition: none; 
         }
         .marker { position: absolute; width: 2px; height: 15px; background: #445; left: 50%; bottom: 20px; transform-origin: bottom center; }
         .marker.zero { background: var(--green); height: 25px; width: 3px; box-shadow: 0 0 10px var(--green); }
         .marker-label { position: absolute; font-size: 11px; color: #556; width: 40px; text-align: center; left: 50%; bottom: 20px; transform-origin: bottom center; font-family: monospace; }
 
         .big-note { font-size: 100px; font-weight: 900; color: var(--amber); margin: 5px 0; letter-spacing: -3px; }
+        
         .stats-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
         .cents-val { font-size: 20px; font-weight: bold; font-family: monospace; color: var(--amber); }
         .hz-display { font-size: 14px; color: #556; font-family: monospace; align-self: center; }
 
-        .settings-bar { display: grid; grid-template-columns: 1fr 1fr; background: var(--bg); padding: 15px; border-radius: 15px; margin: 15px 0; gap: 20px; border: 1px solid #2a2a35; align-items: end; }
+        .settings-bar { display: grid; grid-template-columns: 1fr 1fr 1fr; background: var(--bg); padding: 15px; border-radius: 15px; margin: 15px 0; gap: 10px; border: 1px solid #2a2a35; align-items: end; box-sizing: border-box; }
         .setting-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
         label { font-size: 9px; color: #889; text-transform: uppercase; letter-spacing: 1px; }
         input, select { background: #141b29; border: 1px solid #445; color: var(--amber); padding: 8px; border-radius: 5px; text-align: center; width: 100%; font-size: 14px; outline: none; font-weight: bold; box-sizing: border-box; }
         
         .mic-btn { width: 100%; padding: 18px; border-radius: 15px; border: 2px solid var(--amber); background: transparent; color: var(--amber); cursor: pointer; font-weight: bold; margin-bottom: 20px; font-size: 16px; transition: 0.2s; box-sizing: border-box; }
-        .mic-btn.active { 
-            background: transparent; 
-            color: var(--amber); 
-            border-color: var(--amber); 
-        }
+        .mic-btn.active { background: transparent; color: var(--amber); border-color: var(--amber); }
+        .refresh-btn { background: var(--amber); color: #000; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px; width: 100%; box-sizing: border-box; }
 
-        /* TIPKOVNICA: Popolnoma sredinsko poravnana in prilagojena zaslonu */
+        .enharmonic-container {
+            background: rgba(0,0,0,0.3); 
+            padding: 10px; 
+            border-radius: 15px; 
+            border: 1px solid #2a2a35; 
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+        .enharmonic-grid { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 5px; 
+            justify-content: center;
+        }
+        .toggle-group { display: flex; flex-direction: column; gap: 4px; }
+        .enh-btn { background: #141b29; border: 1px solid #334; color: #889; padding: 6px 2px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: bold; transition: 0.2s; }
+        .enh-btn.active { background: var(--amber); color: #000; border-color: var(--amber); }
+
         .keyboard { 
             display: grid; 
             grid-template-columns: repeat(6, 1fr); 
             gap: 10px; 
             margin: 15px auto 0 auto; 
-            width: 100%;
-            max-width: 100%; 
+            width: 100%; 
+            max-width: 100%;
             box-sizing: border-box; 
         }
         .key { 
@@ -124,18 +147,20 @@
         .key.playing .oct-arrow:hover { color: #000; }
 
         @media (max-width: 500px) {
-            .panel { padding: 16px 8px !important; } 
+            .panel { padding: 16px 8px !important; }
             .keyboard { gap: 5px; }
             .key { padding: 16px 0; font-size: 13px; }
             .oct-ctrl { gap: 2px; font-size: 9px; }
             .oct-arrow { padding: 2px; }
+            .enharmonic-container { padding: 6px; }
+            .enh-btn { font-size: 9px; padding: 4px 1px; }
         }
     </style>
 </head>
 <body>
 
 <div class="panel">
-    <div style="font-size: 10px; letter-spacing: 4px; color: #556; margin-bottom: 10px;">Srednjetonska 1/6 Comma</div>
+    <div style="font-size: 10px; letter-spacing: 4px; color: #556; margin-bottom: 10px;">Srednjetonska 1/6</div>
 
     <div class="gauge-container">
         <div id="markers"></div>
@@ -164,6 +189,35 @@
                 <option value="sawtooth">Žagasto</option>
             </select>
         </div>
+        <div class="setting-item">
+            <label>Sistem</label>
+            <button class="refresh-btn" onclick="updateAll()">Osveži</button>
+        </div>
+    </div>
+
+    <div class="enharmonic-container">
+        <div class="enharmonic-grid">
+            <div class="toggle-group">
+                <button class="enh-btn active" id="e1u" onclick="setEnh(1,'C♯', 88.59,'e1u','e1d')">C♯</button>
+                <button class="enh-btn" id="e1d" onclick="setEnh(1,'D♭',111.73,'e1d','e1u')">D♭</button>
+            </div>
+            <div class="toggle-group">
+                <button class="enh-btn active" id="e3u" onclick="setEnh(3,'E♭',304.89,'e3u','e3d')">E♭</button>
+                <button class="enh-btn" id="e3d" onclick="setEnh(3,'D♯',277.33,'e3d','e3u')">D♯</button>
+            </div>
+            <div class="toggle-group">
+                <button class="enh-btn active" id="e6u" onclick="setEnh(6,'F♯',590.22,'e6u','e6d')">F♯</button>
+                <button class="enh-btn" id="e6d" onclick="setEnh(6,'G♭',613.26,'e6d','e6u')">G♭</button>
+            </div>
+            <div class="toggle-group">
+                <button class="enh-btn active" id="e8u" onclick="setEnh(8,'G♯',786.96,'e8u','e8d')">G♯</button>
+                <button class="enh-btn" id="e8d" onclick="setEnh(8,'A♭',809.96,'e8d','e8u')">A♭</button>
+            </div>
+            <div class="toggle-group">
+                <button class="enh-btn active" id="e10u" onclick="setEnh(10,'B♭',1010.52,'e10u','e10d')">B♭</button>
+                <button class="enh-btn" id="e10d" onclick="setEnh(10,'A♯', 975.22,'e10d','e10u')">A♯</button>
+            </div>
+        </div>
     </div>
 
     <div class="keyboard" id="kb"></div>
@@ -171,14 +225,25 @@
 
 <script>
 let audioCtx, analyser, micStream;
-let noteOctaves = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
-let currentNeedleAngle = 0;
 let activeOscs = {};
+let noteOctaves = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
 
-// Meantone 1/6 osnova po tvojih podatkih (za A=415)
-const mt16Base = [247.5, 260.5, 277.2, 295.1, 310.6, 330.6, 348.0, 370.4, 389.9, 415.0, 441.8, 464.9];
-const noteNames = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "B♭", "B"];
-let currentTargets = [...mt16Base];
+// Spremenljivke za analogni Flow Mode in fiziko igle
+let currentNeedleAngle = 0;
+let needleVelocity = 0; 
+let targetCents = 0; 
+let closestIdx = 0;  
+let lastFrameTime = performance.now();
+
+// Avtomatizacija in filtriranje
+let lowPassFilter = null;
+let lastRms = 0;
+let attackTime = 0;
+let stableFrames = 0;
+let lastValidFreq = -1;
+
+const noteNames = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "G♯", "A", "B♭", "B"];
+const mt16Cents = [0.00, 88.59, 196.74, 304.89, 393.48, 501.63, 590.22, 698.37, 786.96, 895.11, 1010.52, 1091.85];
 
 function init() {
     const markersDiv = document.getElementById('markers');
@@ -187,25 +252,20 @@ function init() {
         m.className = 'marker' + (i === 0 ? ' zero' : '');
         m.style.transform = `translateX(-50%) rotate(${i}deg) translateY(-165px)`;
         markersDiv.appendChild(m);
+        
         const l = document.createElement('div');
         l.className = 'marker-label';
         l.innerText = i === 0 ? "0" : (i > 0 ? "+" + i : i);
         l.style.transform = `translateX(-50%) rotate(${i}deg) translateY(-135px)`;
         markersDiv.appendChild(l);
     }
-    updateAll();
     renderKeyboard();
 }
 
-function updateAll() {
-    let aVal = parseFloat(document.getElementById('a-ref').value) || 415;
-    let ratio = aVal / 415.0;
-    currentTargets = mt16Base.map(f => f * ratio);
-    const wType = document.getElementById('wave-type').value;
-    Object.keys(activeOscs).forEach(idx => {
-        activeOscs[idx].osc.frequency.setTargetAtTime(getFreq(idx), audioCtx.currentTime, 0.03);
-        activeOscs[idx].osc.type = wType;
-    });
+function getNoteFrequencies() {
+    const aRef = parseFloat(document.getElementById('a-ref').value) || 415;
+    const aCents = mt16Cents[9]; 
+    return mt16Cents.map(cents => aRef * Math.pow(2, (cents - aCents) / 1200));
 }
 
 function changeNoteOctave(idx, dir, event) {
@@ -241,12 +301,33 @@ function renderKeyboard() {
 }
 
 function getFreq(idx) {
-    return currentTargets[idx] * Math.pow(2, noteOctaves[idx] - 3);
+    return getNoteFrequencies()[idx] * Math.pow(2, noteOctaves[idx] - 3);
+}
+
+function updateAll() {
+    if (!audioCtx) return;
+    const wType = document.getElementById('wave-type').value;
+    Object.keys(activeOscs).forEach(idx => {
+        activeOscs[idx].osc.frequency.setTargetAtTime(getFreq(idx), audioCtx.currentTime, 0.03);
+        activeOscs[idx].osc.type = wType;
+    });
+}
+
+function setEnh(idx, name, cents, activeId, inactiveId) {
+    noteNames[idx] = name;
+    mt16Cents[idx] = cents;
+    
+    document.getElementById(activeId).classList.add('active');
+    document.getElementById(inactiveId).classList.remove('active');
+    
+    renderKeyboard();
+    updateAll();
 }
 
 function toggleTone(idx) {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
+    
     if (activeOscs[idx]) {
         activeOscs[idx].gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
         activeOscs[idx].osc.stop(audioCtx.currentTime + 0.1);
@@ -270,67 +351,152 @@ async function toggleMic() {
     const btn = document.getElementById('mic-btn');
     if (analyser) { 
         analyser = null; 
+        if(lowPassFilter) { lowPassFilter.disconnect(); lowPassFilter = null; }
         if(micStream) micStream.getTracks().forEach(t => t.stop());
-        btn.innerText = "VKLJUČI MIKROFON";
-        btn.classList.remove('active');
-        return; 
+        btn.innerText = "VKLJUČI MIKROFON"; return; 
     }
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     try {
         micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const source = audioCtx.createMediaStreamSource(micStream);
+        
+        lowPassFilter = audioCtx.createBiquadFilter();
+        lowPassFilter.type = "lowpass";
+        lowPassFilter.frequency.setValueAtTime(1200, audioCtx.currentTime);
+        
         analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 4096;
-        source.connect(analyser);
+        analyser.fftSize = 8192;
+        
+        source.connect(lowPassFilter);
+        lowPassFilter.connect(analyser);
+        
         btn.innerText = "USTAVI MIKROFON";
-        btn.classList.add('active');
         draw();
-    } catch (e) { alert("Dostop do mikrofona zavrnjen."); }
+    } catch (e) { alert("Mikrofon ni dostopen."); }
 }
 
 function autoCorrelate(buf, sampleRate) {
-    let rms = 0;
+    let rms = 0; 
     for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
-    if (Math.sqrt(rms / buf.length) < 0.01) return -1;
-    let n = buf.length / 2;
-    let correlations = new Float32Array(n);
-    for (let offset = 0; offset < n; offset++) {
-        for (let i = 0; i < n; i++) correlations[offset] += buf[i] * buf[i + offset];
+    rms = Math.sqrt(rms / buf.length);
+    
+    if (rms < 0.008) {
+        lastRms = rms;
+        stableFrames = 0;
+        return -1;
     }
-    let d = 0; while (correlations[d] > correlations[d + 1]) d++;
+    
+    let isPlucked = (rms > lastRms * 2.0) && (lastRms > 0.005);
+    lastRms = rms;
+
+    if (isPlucked) {
+        attackTime = Date.now();
+        stableFrames = 0;
+        return -2;
+    }
+
+    if (Date.now() - attackTime < 20) {
+        return -2;
+    }
+
+    let n = buf.length;
+    let correlations = new Float32Array(n);
+    
+    for (let offset = 0; offset < n; offset++) {
+        for (let i = 0; i < n - offset; i++) {
+            correlations[offset] += buf[i] * buf[i + offset];
+        }
+    }
+    
+    let d = 0; 
+    while (d < n - 1 && correlations[d] > correlations[d + 1]) d++;
+    
     let maxV = -1, maxP = -1;
     for (let i = d; i < n; i++) {
-        if (correlations[i] > maxV) { maxV = correlations[i]; maxP = i; }
+        if (correlations[i] > maxV) {
+            maxV = correlations[i];
+            maxP = i;
+        }
     }
-    let x0 = correlations[maxP - 1], x1 = correlations[maxP], x2 = correlations[maxP + 1];
-    let a = (x0 + x2 - 2 * x1) / 2, b = (x2 - x0) / 2;
-    return a === 0 ? -1 : sampleRate / (maxP - b / (2 * a));
+    
+    if (maxP === -1 || maxP === 0 || maxP === n - 1) return -1;
+
+    let x0 = correlations[maxP - 1];
+    let x1 = correlations[maxP];
+    let x2 = correlations[maxP + 1];
+    let a = (x0 + x2 - 2 * x1) / 2;
+    let b = (x2 - x0) / 2;
+    
+    if (a === 0) return sampleRate / maxP;
+    
+    let exactPosition = maxP - b / (2 * a);
+    return sampleRate / exactPosition;
 }
 
 function draw() {
     if (!analyser) return;
     const buffer = new Float32Array(analyser.fftSize);
     analyser.getFloatTimeDomainData(buffer);
+    
     let freq = autoCorrelate(buffer, audioCtx.sampleRate);
-    if (freq !== -1 && isFinite(freq)) {
-        let closestIdx = 0, minHzDiff = Infinity, targetFreq = 0;
+    
+    if (freq !== -1 && freq !== -2 && isFinite(freq)) {
+        const freqs = getNoteFrequencies();
+        let minHz = Infinity;
+
         for (let i = 0; i < 12; i++) {
-            for (let oct = -2; oct <= 2; oct++) {
-                let t = currentTargets[i] * Math.pow(2, oct);
-                let diff = Math.abs(freq - t);
-                if (diff < minHzDiff) { minHzDiff = diff; closestIdx = i; targetFreq = t; }
+            for (let oct = -3; oct <= 3; oct++) {
+                let target = freqs[i] * Math.pow(2, oct);
+                let diff = Math.abs(freq - target);
+                if (diff < minHz) { 
+                    minHz = diff; 
+                    closestIdx = i; 
+                    targetCents = 1200 * Math.log2(freq / target); 
+                }
             }
         }
-        let cents = 1200 * Math.log2(freq / targetFreq);
-        currentNeedleAngle += (cents - currentNeedleAngle) * 0.3;
-        document.getElementById('needle').style.transform = `translateX(-50%) rotate(${Math.max(-50, Math.min(50, currentNeedleAngle))}deg)`;
-        document.getElementById('note-name').textContent = noteNames[closestIdx];
-        document.getElementById('cents-display').textContent = (cents > 0 ? "+" : "") + cents.toFixed(1) + " ¢";
-        document.getElementById('hz-display').textContent = freq.toFixed(2) + " Hz";
-        document.getElementById('note-name').style.color = Math.abs(cents) < 1.5 ? "var(--green)" : "var(--amber)";
+        lastValidFreq = freq;
     }
+
+    const now = performance.now();
+    const dt = Math.min(2, (now - lastFrameTime) / 16.666);
+    lastFrameTime = now;
+
+    let targetVelocity = (targetCents - currentNeedleAngle) * 0.35; 
+    needleVelocity += (targetVelocity - needleVelocity) * 0.60 * dt;    
+    currentNeedleAngle += needleVelocity * dt;                               
+
+    if (Math.abs(currentNeedleAngle) < 0.1 && Math.abs(needleVelocity) < 0.02) {
+        currentNeedleAngle = 0;
+        needleVelocity = 0;
+    }
+    
+    const needleEl = document.getElementById('needle');
+    const noteEl = document.getElementById('note-name');
+    
+    let displayAngle = Math.max(-50, Math.min(50, currentNeedleAngle));
+    needleEl.style.transform = `translateX(-50%) rotate(${displayAngle}deg)`;
+    
+    if (freq !== -1 && freq !== -2) {
+        noteEl.textContent = noteNames[closestIdx];
+        document.getElementById('hz-display').textContent = freq.toFixed(2) + " Hz";
+    }
+
+    if (Math.abs(currentNeedleAngle) <= 2.0) {
+        noteEl.style.color = "var(--green)";
+        needleEl.style.background = "var(--green)";
+        needleEl.style.boxShadow = "0 0 15px var(--green)";
+    } else {
+        noteEl.style.color = "var(--amber)";
+        needleEl.style.background = "var(--amber)";
+        needleEl.style.boxShadow = "0 0 10px var(--amber)";
+    }
+
+    document.getElementById('cents-display').textContent = (currentNeedleAngle > 0 ? "+" : "") + currentNeedleAngle.toFixed(1) + " ¢";
+    
     requestAnimationFrame(draw);
 }
+
 init();
 </script>
 </body>

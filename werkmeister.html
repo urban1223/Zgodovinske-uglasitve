@@ -322,7 +322,7 @@ function autoCorrelate(buf, sampleRate) {
     for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
     rms = Math.sqrt(rms / buf.length);
     
-    if (rms < 0.012) {
+    if (rms < 0.008) {
         lastRms = rms;
         stableFrames = 0;
         return -1;
