@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <title>Pitagorejski uglaševalec po kvintah</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+        :root { 
+            --bg: #0d0d10; --panel: #141b29; --amber: #f2cc5a; 
+            --text: #e8e0d0; --green: #4cdb7a; --red: #e55454;
+            --bg-black: #000000;
+        }
+        html, body {
+            max-width: 100vw; overflow-x: hidden; margin: 0; padding: 0; box-sizing: border-box;
+        }
+        body { 
+            background: var(--bg-black); color: var(--text); font-family: 'Segoe UI', sans-serif; 
+            display: flex; flex-direction: column; align-items: center; padding: 20px 15px; 
+            min-height: 100vh; justify-content: center; position: relative;
+        }
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url('ozadje.jpg'); background-size: cover; background-position: center; z-index: -2;
+        }
+        body::after {
+            content: ""; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--bg-black); opacity: 0.85; z-index: -1;
+        }
+        .panel { 
+            background: var(--panel); padding: 25px; border-radius: 35px; 
+            width: 100%; max-width: 550px; text-align: center; border: 1px solid #2a2a35; box-sizing: border-box;
+        }
+        .gauge-container { 
+            position: relative; width: 100%; height: 200px; margin-top: 10px; 
+            background: var(--bg); border-radius: 20px; border: 1px solid #334; overflow: hidden;
+        }
+        .needle { 
+            width: 4px; height: 140px; background: var(--amber); position: absolute; left: 50%; bottom: 20px; 
+            border-radius: 2px; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); 
+            z-index: 10; box-shadow: 0 0 15px var(--amber);
+        }
+        .marker { position: absolute; width: 2px; height: 12px; background: #445; left: 50%; bottom: 20px; transform-origin: bottom center; }
+        .marker.zero { background: var(--green); height: 22px; width: 3px; box-shadow: 0 0 10px var(--green); }
+        .marker-label { position: absolute; font-size: 10px; color: #556; width: 40px; text-align: center; left: 50%; bottom: 20px; transform-origin: bottom center; font-family: monospace; }
+        
+        .big-note { font-size: 75px; font-weight: 900; color: var(--amber); margin: 5px 0; }
+        .target-info { font-size: 14px; color: #889; margin-bottom: 10px; font-family: monospace; }
+        
+        .stats-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; }
+        .cents-val { font-size: 24px; font-weight: bold; font-family: monospace; color: var(--amber); }
+        .hz-display { font-size: 14px; color: #667; font-family: monospace; align-self: center; }
+
+        .setup-screen { display: flex; flex-direction: column; gap: 15px; background: var(--bg); padding: 25px; border-radius: 20px; border: 1px solid #2a2a35; }
+        .step-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0; }
+        
+        /* Navadni gumbi (Kvinta GOR/DOL) s stalno jantarno obrobo */
+        button { 
+            background: #141b29; 
+            border: 1px solid var(--amber); 
+            color: var(--amber); 
+            padding: 12px; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 14px; 
+            transition: 0.2s; 
+        }
+        button:hover { 
+            background: #1c263a; 
+            box-shadow: 0 0 8px rgba(242, 204, 90, 0.3);
+        }
+        
+        /* Glavni gumb (Mikrofon) s stalno jantarno obrobo */
+        .action-btn { 
+            background: #141b29; 
+            border: 1px solid var(--amber); 
+            color: var(--amber); 
+            padding: 15px; 
+            font-size: 15px; 
+            width: 100%; 
+            margin-bottom: 15px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border-radius: 10px; 
+            transition: 0.2s; 
+        }
+        .action-btn:hover { 
+            background: #1c263a; 
+            box-shadow: 0 0 8px rgba(242, 204, 90, 0.3);
+        }
+        
+        .history-container { background: var(--bg); border-radius: 20px; border: 1px solid #2a2a35; padding: 15px; margin-top: 20px; text-align: left; max-height: 250px; overflow-y: auto; }
+        .history-title { font-size: 11px; color: #667; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; border-bottom: 1px solid #223; padding-bottom: 5px; }
+        .history-list { display: flex; flex-direction: column; gap: 6px; font-family: monospace; font-size: 14px; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; color: #aaa; padding: 6px 10px; border-radius: 5px; background: rgba(255,255,255,0.02); cursor: pointer; border: 1px solid transparent; }
+        .history-item.tuned { color: var(--green) !important; background: rgba(76, 219, 122, 0.08); font-weight: bold; }
+        .history-item.active-target { border: 1px solid var(--amber); color: var(--amber); }
+        
+        .delete-btn { background: transparent; border: none; color: var(--red); cursor: pointer; font-size: 14px; padding: 0 5px; font-weight: bold; border-radius: 0; }
+        .delete-btn:hover { transform: scale(1.2); background: transparent; }
+        
+        .setup-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: left; }
+        .setup-row label { font-size: 10px; color: #778; text-transform: uppercase; margin-bottom: 4px; display: block; }
+        input, select { background: #141b29; border: 1px solid #445; color: var(--amber); padding: 10px; border-radius: 8px; text-align: center; width: 100%; font-size: 14px; font-weight: bold; box-sizing: border-box; outline: none; }
+    </style>
+</head>
+<body>
+
+<div class="panel">
+    <div style="font-size: 10px; letter-spacing: 4px; color: #556; margin-bottom: 15px; text-transform: uppercase;">Pitagorejski uglaševalec po kvintah</div>
+
+    <div id="setup-screen" class="setup-screen">
+        <div style="font-size: 15px; color: #e8e0d0; font-weight: bold; margin-bottom: 5px;">Izberi začetni ton in frekvenco</div>
+        
+        <div class="setup-row">
+            <div>
+                <label>Ton</label>
+                <select id="start-note">
+                    <option value="C" selected>C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                    <option value="F">F</option>
+                    <option value="G">G</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="H">H</option>
+                </select>
+            </div>
+            <div>
+                <label>Oktava</label>
+                <select id="start-octave">
+                    <option value="2">2</option>
+                    <option value="3" selected>3</option>
+                    <option value="4">4</option>
+                </select>
+            </div>
+            <div>
+                <label>Referenca A</label>
+                <input type="number" id="a-ref" value="415" step="0.1">
+            </div>
+        </div>
+        
+        <button onclick="startChain()" style="background: var(--amber); color: #000; border: none; padding: 15px; font-size: 16px; margin-top: 10px; border-radius: 12px;">ZAČNI UGLAŠEVANJE</button>
+    </div>
+
+    <div id="tuner-screen" style="display: none;">
+        <div class="gauge-container">
+            <div id="markers"></div>
+            <div class="needle" id="needle"></div>
+        </div>
+
+        <div class="big-note" id="note-name">--</div>
+        <div class="target-info" id="target-info">Tarča: -- Hz</div>
+        
+        <div class="stats-row">
+            <div class="cents-val" id="cents-display">--</div>
+            <div class="hz-display" id="hz-display">0.00 Hz</div>
+        </div>
+        
+        <button id="mic-btn" class="action-btn" onclick="toggleMic()">VKLJUČI MIKROFON</button>
+
+        <div class="step-controls">
+            <button onclick="tuneNextUnused(-1)">◀ Kvinta DOL</button>
+            <button onclick="tuneNextUnused(1)">Kvinta GOR ▶</button>
+        </div>
+
+        <div class="history-container">
+            <div class="history-title">Zgodovina uglašenih tonov (in njihovih oktav)</div>
+            <div class="history-list" id="history-list"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let audioCtx, analyser, micStream, lowPassFilter = null;
+
+let currentNeedleAngle = 0;
+let needleVelocity = 0;
+let targetCents = Infinity; 
+let lastFrameTime = performance.now();
+
+let globalA = 415;
+let activeIndex = 0; 
+let chainHistory = [];
+
+let detectedOctave = 3; 
+
+const sharpsChain = ["C", "G", "D", "A", "E", "H", "F♯", "C♯", "G♯", "D♯", "A♯", "E♯", "H♯"];
+const flatsChain  = ["C", "F", "B", "E♭", "A♭", "D♭", "G♭", "C♭", "F♭"];
+
+function initMarkers() {
+    const markersDiv = document.getElementById('markers');
+    markersDiv.innerHTML = "";
+    for (let i = -50; i <= 50; i += 10) {
+        const m = document.createElement('div');
+        m.className = 'marker' + (i === 0 ? ' zero' : '');
+        m.style.transform = `translateX(-50%) rotate(${i}deg) translateY(-145px)`;
+        markersDiv.appendChild(m);
+        
+        const l = document.createElement('div');
+        l.className = 'marker-label';
+        l.innerText = i === 0 ? "0" : (i > 0 ? "+" + i : i);
+        l.style.transform = `translateX(-50%) rotate(${i}deg) translateY(-120px)`;
+        markersDiv.appendChild(l);
+    }
+}
+
+function getInitialRootFreq(note, octave, aRef) {
+    const pythCentsFromC = { "C": 0, "D": 204, "E": 408, "F": 498, "G": 702, "A": 906, "B": 996, "H": 1110 };
+    const targetCents = pythCentsFromC[note] !== undefined ? pythCentsFromC[note] : 0;
+    const aCents = 906; 
+    
+    let freq3 = aRef * Math.pow(2, (targetCents - aCents) / 1200);
+    return freq3 * Math.pow(2, octave - 3);
+}
+
+function startChain() {
+    const note = document.getElementById('start-note').value;
+    const octave = parseInt(document.getElementById('start-octave').value);
+    globalA = parseFloat(document.getElementById('a-ref').value) || 415;
+
+    let rootFreq = getInitialRootFreq(note, octave, globalA);
+
+    chainHistory.push({
+        name: note,
+        octave: octave,
+        freq: rootFreq,
+        isTuned: false
+    });
+    
+    activeIndex = 0;
+    detectedOctave = octave;
+
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('tuner-screen').style.display = 'block';
+    
+    initMarkers();
+    updateUI();
+}
+
+function tuneNextUnused(direction) {
+    const fifthFactor = 1.5; 
+    let currentTone = chainHistory[activeIndex];
+    
+    let candidateName = "";
+    let candidateOctave = currentTone.octave;
+    let candidateFreq = 0;
+
+    if (direction === 1) {
+        candidateFreq = currentTone.freq * fifthFactor;
+        if (candidateFreq > getOctaveCeiling(candidateOctave)) candidateOctave++;
+        
+        let idx = sharpsChain.indexOf(currentTone.name);
+        if (idx !== -1 && idx < sharpsChain.length - 1) {
+            candidateName = sharpsChain[idx + 1];
+        } else {
+            let fIdx = flatsChain.indexOf(currentTone.name);
+            if (fIdx > 0) {
+                candidateName = flatsChain[fIdx - 1];
+            } else {
+                candidateName = currentTone.name + "♯";
+            }
+        }
+    } else {
+        candidateFreq = currentTone.freq / fifthFactor;
+        if (candidateFreq < getOctaveFloor(candidateOctave)) candidateOctave--;
+        
+        let fIdx = flatsChain.indexOf(currentTone.name);
+        if (fIdx !== -1 && fIdx < flatsChain.length - 1) {
+            candidateName = flatsChain[fIdx + 1];
+        } else {
+            let sIdx = sharpsChain.indexOf(currentTone.name);
+            if (sIdx > 0) {
+                candidateName = sharpsChain[sIdx - 1];
+            } else {
+                candidateName = currentTone.name + "♭";
+            }
+        }
+    }
+
+    let existingIdx = chainHistory.findIndex(item => item.name === candidateName && item.octave === candidateOctave);
+
+    if (existingIdx !== -1) {
+        activeIndex = existingIdx;
+    } else {
+        chainHistory.push({
+            name: candidateName,
+            octave: candidateOctave,
+            freq: candidateFreq,
+            isTuned: false
+        });
+        activeIndex = chainHistory.length - 1;
+    }
+
+    detectedOctave = chainHistory[activeIndex].octave; 
+    updateUI();
+}
+
+function getOctaveCeiling(oct) { return globalA * Math.pow(2, oct - 4) * 1.45; }
+function getOctaveFloor(oct) { return globalA * Math.pow(2, oct - 4) * 0.73; }
+
+function deleteHistoryItem(idx, event) {
+    if (event) event.stopPropagation();
+    chainHistory = chainHistory.slice(0, idx);
+    
+    if (chainHistory.length === 0) {
+        document.getElementById('tuner-screen').style.display = 'none';
+        document.getElementById('setup-screen').style.display = 'block';
+    } else {
+        activeIndex = chainHistory.length - 1;
+        detectedOctave = chainHistory[activeIndex].octave;
+        updateUI();
+    }
+}
+
+function selectActiveTarget(idx) {
+    activeIndex = idx;
+    detectedOctave = chainHistory[activeIndex].octave;
+    updateUI();
+}
+
+function updateUI() {
+    let activeTone = chainHistory[activeIndex];
+    if (!activeTone) return;
+
+    document.getElementById('note-name').textContent = `${activeTone.name}${detectedOctave}`;
+    
+    let targetOctaveFreq = activeTone.freq * Math.pow(2, detectedOctave - activeTone.octave);
+    document.getElementById('target-info').textContent = `Tarča: ${targetOctaveFreq.toFixed(2)} Hz`;
+    
+    const listEl = document.getElementById('history-list');
+    listEl.innerHTML = "";
+    
+    chainHistory.forEach((item, i) => {
+        const div = document.createElement('div');
+        let classes = "history-item";
+        if (i === activeIndex) classes += " active-target";
+        if (item.isTuned) classes += " tuned";
+        
+        div.className = classes;
+        div.onclick = () => selectActiveTarget(i);
+
+        div.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="delete-btn" onclick="deleteHistoryItem(${i}, event)">✕</button>
+                <span>${i + 1}. <strong>${item.name}${item.octave}</strong></span>
+            </div>
+            <span>${item.freq.toFixed(2)} Hz</span>
+        `;
+        listEl.appendChild(div);
+    });
+}
+
+async function toggleMic() {
+    const btn = document.getElementById('mic-btn');
+    if (analyser) { 
+        analyser = null; 
+        if(lowPassFilter) { lowPassFilter.disconnect(); lowPassFilter = null; }
+        if(micStream) micStream.getTracks().forEach(t => t.stop());
+        btn.innerText = "VKLJUČI MIKROFON"; return; 
+    }
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const source = audioCtx.createMediaStreamSource(micStream);
+        
+        lowPassFilter = audioCtx.createBiquadFilter();
+        lowPassFilter.type = "lowpass";
+        lowPassFilter.frequency.setValueAtTime(1500, audioCtx.currentTime);
+        
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 8192;
+        
+        source.connect(lowPassFilter);
+        lowPassFilter.connect(analyser);
+        
+        btn.innerText = "USTAVI MIKROFON";
+        draw();
+    } catch (e) { alert("Mikrofon ni dostopen."); }
+}
+
+function autoCorrelate(buf, sampleRate) {
+    let rms = 0; 
+    for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
+    rms = Math.sqrt(rms / buf.length);
+    if (rms < 0.008) return -1;
+
+    let n = buf.length;
+    let correlations = new Float32Array(n);
+    for (let offset = 0; offset < n; offset++) {
+        for (let i = 0; i < n - offset; i++) {
+            correlations[offset] += buf[i] * buf[i + offset];
+        }
+    }
+    let d = 0; while (d < n - 1 && correlations[d] > correlations[d + 1]) d++;
+    let maxV = -1, maxP = -1;
+    for (let i = d; i < n; i++) {
+        if (correlations[i] > maxV) { maxV = correlations[i]; maxP = i; }
+    }
+    if (maxP === -1 || maxP === 0 || maxP === n - 1) return -1;
+    
+    let x0 = correlations[maxP - 1], x1 = correlations[maxP], x2 = correlations[maxP + 1];
+    let a = (x0 + x2 - 2 * x1) / 2, b = (x2 - x0) / 2;
+    if (a === 0) return sampleRate / maxP;
+    return sampleRate / (maxP - b / (2 * a));
+}
+
+function draw() {
+    if (!analyser) return;
+    const buffer = new Float32Array(analyser.fftSize);
+    analyser.getFloatTimeDomainData(buffer);
+    
+    let freq = autoCorrelate(buffer, audioCtx.sampleRate);
+    let activeTone = chainHistory[activeIndex];
+    let matchedFreq = 0;
+    
+    if (freq !== -1 && isFinite(freq) && activeTone) {
+        let bestCents = Infinity;
+        let bestOctave = activeTone.octave;
+
+        for (let octShift = -3; octShift <= 3; octShift++) {
+            let testOct = activeTone.octave + octShift;
+            let testFreq = activeTone.freq * Math.pow(2, octShift);
+            let centsDiff = 1200 * Math.log2(freq / testFreq);
+            
+            if (Math.abs(centsDiff) < Math.abs(bestCents)) {
+                bestCents = centsDiff;
+                bestOctave = testOct;
+                matchedFreq = testFreq;
+            }
+        }
+
+        if (Math.abs(bestCents) <= 50) {
+            targetCents = bestCents;
+            if (detectedOctave !== bestOctave) {
+                detectedOctave = bestOctave;
+                updateUI();
+            }
+        } else {
+            targetCents = Infinity; 
+        }
+    } else {
+        targetCents = Infinity; 
+    }
+
+    const now = performance.now();
+    const dt = Math.min(2, (now - lastFrameTime) / 16.666);
+    lastFrameTime = now;
+
+    let needleTargetAngle = 0;
+    if (targetCents !== Infinity) {
+        needleTargetAngle = targetCents;
+    } else {
+        needleTargetAngle = currentNeedleAngle > 0 ? 50 : -50;
+    }
+
+    let targetVelocity = (needleTargetAngle - currentNeedleAngle) * 0.25; 
+    needleVelocity += (targetVelocity - needleVelocity) * 0.50 * dt;    
+    currentNeedleAngle += needleVelocity * dt;                               
+
+    const needleEl = document.getElementById('needle');
+    const noteEl = document.getElementById('note-name');
+    const centsEl = document.getElementById('cents-display');
+    
+    let displayAngle = Math.max(-50, Math.min(50, currentNeedleAngle));
+    needleEl.style.transform = `translateX(-50%) rotate(${displayAngle}deg)`;
+    
+    if (freq !== -1 && targetCents !== Infinity) {
+        document.getElementById('hz-display').textContent = freq.toFixed(2) + " Hz";
+    }
+
+    if (targetCents !== Infinity && Math.abs(currentNeedleAngle) <= 1.5) {
+        noteEl.style.color = "var(--green)";
+        needleEl.style.background = "var(--green)";
+        needleEl.style.boxShadow = "0 0 15px var(--green)";
+        centsEl.style.color = "var(--green)";
+        centsEl.textContent = (currentNeedleAngle > 0 ? "+" : "") + currentNeedleAngle.toFixed(1) + " ¢";
+        
+        if (detectedOctave === activeTone.octave) {
+            if (!activeTone.isTuned) {
+                activeTone.isTuned = true;
+                updateUI();
+            }
+        } else {
+            let alreadyExists = chainHistory.some(item => item.name === activeTone.name && item.octave === detectedOctave);
+            if (!alreadyExists) {
+                chainHistory.push({
+                    name: activeTone.name,
+                    octave: detectedOctave,
+                    freq: matchedFreq,
+                    isTuned: true
+                });
+                updateUI();
+            }
+        }
+    } else {
+        noteEl.style.color = "var(--amber)";
+        needleEl.style.background = "var(--amber)";
+        needleEl.style.boxShadow = "0 0 10px var(--amber)";
+        centsEl.style.color = "var(--amber)";
+        
+        if (targetCents === Infinity) {
+            centsEl.textContent = "--";
+        } else {
+            centsEl.textContent = (currentNeedleAngle > 0 ? "+" : "") + currentNeedleAngle.toFixed(1) + " ¢";
+        }
+    }
+    
+    requestAnimationFrame(draw);
+}
+</script>
+</body>
+</html>
